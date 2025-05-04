@@ -1,0 +1,254 @@
+:root {
+    --background-color: #fafafa;
+    --text-color: #212121;
+    --primary-color: #0288d1;
+    --secondary-color: #757575;
+    --card-bg: #ffffff;
+    --accent-color: #388e3c;
+    --navbar-bg: #ffffff;
+    --navbar-text: #212121;
+    --button-bg: #0288d1;
+    --button-text: #ffffff;
+    --button-hover-bg: #01579b;
+    --button-hover-text: #ffffff;
+}
+html.dark-theme {
+    --background-color: #212121;
+    --text-color: #f5f5f5;
+    --primary-color: #4fc3f7;
+    --secondary-color: #bdbdbd;
+    --card-bg: #303030;
+    --accent-color: #66bb6a;
+    --navbar-bg: #303030;
+    --navbar-text: #f5f5f5;
+    --button-bg: #4fc3f7;
+    --button-text: #212121;
+    --button-hover-bg: #81d4fa;
+    --button-hover-text: #212121;
+}
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: all 0.4s ease-in-out;
+    line-height: 1.7;
+}
+.navbar {
+    background-color: var(--navbar-bg);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    padding: 1.2rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    transition: color 0.3s;
+}
+.nav-link {
+    color: var(--navbar-text);
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    transition: color 0.3s, background-color 0.3s;
+}
+.nav-link:hover {
+    color: var(--primary-color);
+    background-color: rgba(2, 136, 209, 0.1);
+    border-radius: 6px;
+}
+.card {
+    background-color: var(--card-bg);
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    color: var(--text-color);
+}
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+}
+.code-block {
+    background-color: #f5f5f5;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    overflow-x: auto;
+    color: var(--text-color);
+}
+html.dark-theme .code-block {
+    background-color: #424242;
+}
+.hero-section {
+    background: linear-gradient(120deg, var(--primary-color), var(--accent-color));
+    color: #ffffff;
+    padding: 120px 0;
+    text-align: center;
+    border-radius: 0 0 20px 20px;
+    position: relative;
+}
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.15);
+    border-radius: 0 0 20px 20px;
+}
+html.dark-theme .hero-section::before {
+    background: rgba(0,0,0,0.5);
+}
+.hero-section h1, .hero-section p {
+    position: relative;
+    z-index: 1;
+}
+.btn-primary {
+    background-color: var(--button-bg);
+    border: none;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-weight: 500;
+    transition: background-color 0.3s, transform 0.2s;
+    color: var(--button-text);
+    cursor: pointer;
+    display: inline-block;
+    text-decoration: none; /* Retain from original <a> styling if needed */
+}
+.btn-primary:hover {
+    background-color: var(--button-hover-bg);
+    color: var(--button-hover-text);
+    transform: scale(1.05);
+    text-decoration: none; /* Retain from original <a> styling if needed */
+}
+.btn-secondary {
+    background-color: transparent;
+    color: var(--secondary-color);
+    border: 2px solid var(--secondary-color);
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-weight: 500;
+    transition: all 0.3s;
+    cursor: pointer;
+    display: inline-block;
+    text-decoration: none; /* Retain from original <a> styling if needed */
+}
+.btn-secondary:hover {
+    background-color: var(--secondary-color);
+    color: #ffffff;
+    text-decoration: none; /* Retain from original <a> styling if needed */
+}
+html.dark-theme .btn-secondary:hover {
+    background-color: var(--secondary-color);
+    color: #212121;
+}
+.form-control {
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    padding: 12px;
+    transition: border-color 0.3s;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+.form-control::placeholder {
+    color: var(--secondary-color);
+    opacity: 0.7;
+}
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px rgba(2, 136, 209, 0.3);
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+.form-select {
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    padding: 12px;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+html.dark-theme .form-select option {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+.accordion-button {
+    border-radius: 6px !important;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    font-weight: 500;
+}
+.accordion-button:not(.collapsed) {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+html.dark-theme .accordion-item {
+    background-color: var(--card-bg);
+}
+.section-title {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 25px;
+    position: relative;
+    display: inline-block;
+}
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    width: 60px;
+    height: 4px;
+    background-color: var(--accent-color);
+}
+#theme-toggle {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary-color);
+    color: #ffffff;
+    transition: background-color 0.3s;
+}
+#theme-toggle:hover {
+    background-color: #0277bd;
+}
+#back-to-top {
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    bottom: 30px;
+    right: 30px;
+}
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.slide-in {
+    animation: slideIn 0.8s ease-out;
+}
+.time-info {
+    font-size: 1.1rem;
+    margin-top: 20px;
+}
+.form-label {
+    color: var(--text-color);
+}
+.accordion-body {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+.card h5, .card p, .card a {
+    color: var(--text-color);
+}
+.dark-theme-bg-light {
+    background-color: var(--card-bg);
+} 
