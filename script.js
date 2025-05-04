@@ -142,7 +142,7 @@ async function fetchStats() {
     if (statsContributorsEl) statsContributorsEl.textContent = 'Loading...';
     
     try {
-        const response = await fetch('https://api.github.com/repos/skyious/index-repo-oneappstore');
+        const response = await fetch('https://api.github.com/repos/skyious/config-repo-oneappstore');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         if (statsAppsEl) statsAppsEl.textContent = data.forks_count ?? 'many';
