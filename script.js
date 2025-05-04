@@ -41,6 +41,40 @@ function generateYAML() {
         tags: document.getElementById('tags')?.value
     };
 
+    // Validate required fields
+    const requiredFields = ['name', 'author', 'version', 'description', 'logo_url', 'download_url'];
+    const missingFields = requiredFields.filter(field => !fields[field]);
+    
+    if (missingFields.length > 0) {
+        const message = `Missing required fields: ${missingFields.join(', ')}`;
+        if (yamlPreview) {
+            yamlPreview.textContent = message;
+            yamlPreview.style.color = 'var(--secondary-color)';
+        }
+        return;
+    }
+
+    // Validate version format
+    if (!/^\d+\.\d+\.\d+$/.test(fields.version)) {
+        if (yamlPreview) {
+            yamlPreview.textContent = 'Invalid version format. Use X.Y.Z format (e.g., 1.0.0)';
+            yamlPreview.style.color = 'var(--secondary-color)';
+        }
+        return;
+    }
+
+    // Validate URLs
+    const urlFields = ['logo_url', 'download_url', 'homepage'];
+    for (const field of urlFields) {
+        if (fields[field] && !/^https?:\/\/.+/.test(fields[field])) {
+            if (yamlPreview) {
+                yamlPreview.textContent = `Invalid ${field} URL format. Must start with http:// or https://`;
+                yamlPreview.style.color = 'var(--secondary-color)';
+            }
+            return;
+        }
+    }
+
     let yaml = '';
     for (const [key, value] of Object.entries(fields)) {
         if (value && key !== 'tags') {
@@ -53,8 +87,10 @@ function generateYAML() {
             yaml += `tags: [${tagsArray.map(t => `"${t}"`).join(', ')}]\n`;
         }
     }
+
     if (yamlPreview) {
         yamlPreview.textContent = yaml || 'Fill in the form to see your config';
+        yamlPreview.style.color = ''; // Reset color
     }
 }
 
@@ -102,6 +138,9 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 async function fetchStats() {
     const statsAppsEl = document.getElementById('stats-apps');
     const statsContributorsEl = document.getElementById('stats-contributors');
+    if (statsAppsEl) statsAppsEl.textContent = 'Loading...';
+    if (statsContributorsEl) statsContributorsEl.textContent = 'Loading...';
+    
     try {
         const response = await fetch('https://api.github.com/repos/ONE-APP-STORE/config-repo');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -110,8 +149,8 @@ async function fetchStats() {
         if (statsContributorsEl) statsContributorsEl.textContent = data.watchers_count ?? 'numerous';
     } catch (error) {
         console.error("Failed to fetch GitHub stats:", error);
-        if (statsAppsEl) statsAppsEl.textContent = 'many';
-        if (statsContributorsEl) statsContributorsEl.textContent = 'numerous';
+        if (statsAppsEl) statsAppsEl.textContent = 'Failed to load stats';
+        if (statsContributorsEl) statsContributorsEl.textContent = 'Failed to load stats';
     }
 }
 fetchStats();
@@ -121,6 +160,9 @@ function displayIndexingTime() {
     const localTimeEl = document.getElementById('local-time');
     const utcTimeEl = document.getElementById('utc-time');
     if (!localTimeEl || !utcTimeEl) return;
+
+    localTimeEl.textContent = 'Calculating next indexing time...';
+    utcTimeEl.textContent = '';
 
     const now = new Date();
     // Set target time to 8 PM IST which is 14:30 UTC
@@ -152,6 +194,7 @@ function displayIndexingTime() {
         localTimeEl.textContent = `Next indexing at 14:30 UTC`;
         utcTimeEl.textContent = ``; // Hide the second line on error
     }
+}
 }
 displayIndexingTime();
 
