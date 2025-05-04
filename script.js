@@ -195,7 +195,6 @@ function displayIndexingTime() {
         utcTimeEl.textContent = ``; // Hide the second line on error
     }
 }
-}
 displayIndexingTime();
 
 // Fork Now & Explore Store Button Functionality
