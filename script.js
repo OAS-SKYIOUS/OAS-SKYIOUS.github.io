@@ -134,26 +134,106 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Fetch GitHub Stats
-async function fetchStats() {
+Okay, let's address your points: the watch count, adding data from another repository, fetching a specific file, and using its line count for the "apps count".
+
+1. The "Bad" Watch Count:
+
+You mentioned the watch count is "bad". In the GitHub API, watchers_count refers to the number of people who are "watching" the repository (receiving notifications for all activity). Often, what people are more interested in is the number of stargazers (stargazers_count), which is usually a better indicator of how many people like or support the project.
+
+Your current code uses data.watchers_count. If you want to display the number of stars instead, you can easily change this.
+
+2. Adding Another Repo and Counting Lines in a File:
+
+Yes, you can definitely fetch data from another repository and read a specific file using the GitHub API. The endpoint for getting file content is GET /repos/{owner}/{repo}/contents/{path}. The content of the file is returned Base64 encoded, so you'll need to decode it and then count the lines.
+
+You can integrate this into your existing JavaScript code. We'll modify the WorkspaceStats function to do this. We'll change it to WorkspaceStatsAndAppCount to better reflect its new purpose.
+
+Here's how you can modify your JavaScript code:
+JavaScript
+
+// ... (Keep your existing Theme Toggling, Config Generator, Back to Top, Smooth Scrolling code above this) ...
+
+// Fetch GitHub Stats and App Count from another repo
+async function fetchStatsAndAppCount() {
+    // This element will now show the line count from your config file
     const statsAppsEl = document.getElementById('stats-apps');
+    // This element will show the stargazers count from the original repo
     const statsContributorsEl = document.getElementById('stats-contributors');
+
+    // Set loading states
     if (statsAppsEl) statsAppsEl.textContent = 'Loading...';
     if (statsContributorsEl) statsContributorsEl.textContent = 'Loading...';
-    
+
+    // --- Fetch stats for your original repo (skyious/config-repo-oneappstore) ---
+    // We'll use this to get the stargazers count
     try {
-        const response = await fetch('https://api.github.com/repos/skyious/config-repo-oneappstore');
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        if (statsAppsEl) statsAppsEl.textContent = data.forks_count ?? 'many';
-        if (statsContributorsEl) statsContributorsEl.textContent = data.watchers_count ?? 'numerous';
+        const originalRepoResponse = await fetch('https://api.github.com/repos/skyious/config-repo-oneappstore');
+        if (!originalRepoResponse.ok) {
+             console.error(`HTTP error! status: ${originalRepoResponse.status} for original repo`);
+             // Optionally update the element to show error or default
+             if (statsContributorsEl) statsContributorsEl.textContent = 'Failed to load stats';
+        } else {
+            const originalRepoData = await originalRepoResponse.json();
+            // Display stargazers count (often more relevant than watchers)
+            if (statsContributorsEl) statsContributorsEl.textContent = originalRepoData.stargazers_count ?? 'numerous'; // Changed from watchers_count
+        }
+
     } catch (error) {
-        console.error("Failed to fetch GitHub stats:", error);
-        if (statsAppsEl) statsAppsEl.textContent = 'Failed to load stats';
+        console.error("Failed to fetch original repo stats:", error);
         if (statsContributorsEl) statsContributorsEl.textContent = 'Failed to load stats';
     }
+
+    // --- Fetch file content from the NEW repo and count lines for app count ---
+
+    // !!! IMPORTANT: Replace these with the details of your NEW repository !!!
+    const NEW_REPO_OWNER = 'the-owner-of-the-new-repo'; // e.g., 'ONE-APP-STORE'
+    const NEW_REPO_NAME = 'the-name-of-the-new-repo';   // e.g., 'configs'
+    const CONFIG_FILE_PATH = 'config.one';              // e.g., 'configs/my-app-list/config.one' (if in a subdir)
+
+    try {
+        // Use the GitHub Content API to get the file
+        const fileContentResponse = await fetch(`https://api.github.com/repos/${NEW_REPO_OWNER}/${NEW_REPO_NAME}/contents/${CONFIG_FILE_PATH}`);
+
+        if (!fileContentResponse.ok) {
+             let errorMessage = `HTTP error! status: ${fileContentResponse.status} for config file`;
+             if (fileContentResponse.status === 404) {
+                 errorMessage = `Config file not found: ${CONFIG_FILE_PATH} in ${NEW_REPO_OWNER}/${NEW_REPO_NAME}`;
+             }
+             console.error(errorMessage);
+             if (statsAppsEl) statsAppsEl.textContent = 'Failed to load count'; // Show error
+             return; // Stop here if file fetching failed
+        }
+
+        const fileData = await fileContentResponse.json();
+
+        // The file content is base64 encoded in the 'content' field of the response
+        if (fileData && fileData.content) {
+            const base64Content = fileData.content;
+            const decodedContent = atob(base64Content); // Decode the base64 string
+
+            // Count lines: split the content by newline characters.
+            // Filter out any empty lines that might result from trailing newlines or blank lines.
+            const lines = decodedContent.split('\n').filter(line => line.trim() !== '');
+
+            // Update the statsAppsEl with the number of non-empty lines
+            if (statsAppsEl) {
+                statsAppsEl.textContent = lines.length;
+            }
+
+        } else {
+             console.error("Could not retrieve valid file content from API response.");
+             if (statsAppsEl) statsAppsEl.textContent = 'Failed to load count'; // Show error
+        }
+
+    } catch (error) {
+        console.error("Failed to fetch or process config file:", error);
+        if (statsAppsEl) statsAppsEl.textContent = 'Failed to load count'; // Show error
+    }
 }
-fetchStats();
+
+// Call the new function on load to fetch and display stats and app count
+fetchStatsAndAppCount();
+
 
 // Calculate and Display Next Indexing Time
 function displayIndexingTime() {
