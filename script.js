@@ -134,23 +134,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-Okay, let's address your points: the watch count, adding data from another repository, fetching a specific file, and using its line count for the "apps count".
-
-1. The "Bad" Watch Count:
-
-You mentioned the watch count is "bad". In the GitHub API, watchers_count refers to the number of people who are "watching" the repository (receiving notifications for all activity). Often, what people are more interested in is the number of stargazers (stargazers_count), which is usually a better indicator of how many people like or support the project.
-
-Your current code uses data.watchers_count. If you want to display the number of stars instead, you can easily change this.
-
-2. Adding Another Repo and Counting Lines in a File:
-
-Yes, you can definitely fetch data from another repository and read a specific file using the GitHub API. The endpoint for getting file content is GET /repos/{owner}/{repo}/contents/{path}. The content of the file is returned Base64 encoded, so you'll need to decode it and then count the lines.
-
-You can integrate this into your existing JavaScript code. We'll modify the WorkspaceStats function to do this. We'll change it to WorkspaceStatsAndAppCount to better reflect its new purpose.
-
-Here's how you can modify your JavaScript code:
-JavaScript
-
 // ... (Keep your existing Theme Toggling, Config Generator, Back to Top, Smooth Scrolling code above this) ...
 
 // Fetch GitHub Stats and App Count from another repo
@@ -234,6 +217,7 @@ async function fetchStatsAndAppCount() {
 // Call the new function on load to fetch and display stats and app count
 fetchStatsAndAppCount();
 
+// ... (Keep your existing Fork Now & Explore Store Button Functionality below this) ...
 
 // Calculate and Display Next Indexing Time
 function displayIndexingTime() {
