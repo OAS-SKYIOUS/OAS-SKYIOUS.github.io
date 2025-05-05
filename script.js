@@ -169,13 +169,13 @@ async function fetchStatsAndAppCount() {
     // --- Fetch file content from the NEW repo and count lines for app count ---
 
     // !!! IMPORTANT: Replace these with the details of your NEW repository !!!
-    const NEW_REPO_OWNER = 'the-owner-of-the-new-repo'; // e.g., 'ONE-APP-STORE'
-    const NEW_REPO_NAME = 'the-name-of-the-new-repo';   // e.g., 'configs'
-    const CONFIG_FILE_PATH = 'config.one';              // e.g., 'configs/my-app-list/config.one' (if in a subdir)
+    const NEW_REPO_OWNER = 'skyious'; // e.g., 'ONE-APP-STORE'
+    const NEW_REPO_NAME = 'index-repo-oneappstore';   // e.g., 'configs'
+    const CONFIG_FILE_PATH = 'apps.one';              // e.g., 'configs/my-app-list/config.one' (if in a subdir)
 
     try {
         // Use the GitHub Content API to get the file
-        const fileContentResponse = await fetch(`https://api.github.com/repos/${NEW_REPO_OWNER}/${NEW_REPO_NAME}/contents/${CONFIG_FILE_PATH}`);
+        const fileContentResponse = await fetch(`https://api.github.com/repos/${NEW_REPO_OWNER}/${NEW_REPO_NAME}/${CONFIG_FILE_PATH}`);
 
         if (!fileContentResponse.ok) {
              let errorMessage = `HTTP error! status: ${fileContentResponse.status} for config file`;
