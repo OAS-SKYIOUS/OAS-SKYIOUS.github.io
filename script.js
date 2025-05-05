@@ -364,6 +364,6 @@ if (forkButton) {
 
 if (exploreButton) {
     exploreButton.addEventListener('click', () => {
-        window.location.href = 'https://one-app-store.com';
+        window.location.href = 'https://oas-skyious.github.io/Apps';
     });
 }
