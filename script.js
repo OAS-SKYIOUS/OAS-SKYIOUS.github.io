@@ -261,59 +261,84 @@ function displayIndexingTime() {
     }
 
     try {
+        // Define the scheduled hours in UTC
+        const scheduledUTCHours = [0, 5, 10, 15, 20];
+
         const now = new Date();
-        const currentUTCMinutes = now.getUTCMinutes();
+        const currentUTCHour = now.getUTCHours();
+        const currentUTCDate = now.getUTCDate();
+        const currentUTCMonth = now.getUTCMonth();
+        const currentUTCFullYear = now.getUTCFullYear();
 
-        // Calculate how many minutes past the last 5-minute mark we are
-        const remainderMinutes = currentUTCMinutes % 5;
+        // Find the first scheduled hour that is strictly AFTER the current UTC hour
+        let nextHourUTC = scheduledUTCHours.find(hour => hour > currentUTCHour);
 
-        // Calculate minutes to add to reach the *next* 5-minute mark
-        // If we are exactly on a 5-min mark (remainder is 0), the next is 5 mins away.
-        const minutesToAdd = (remainderMinutes === 0) ? 5 : (5 - remainderMinutes);
+        let nextIndexingDateUTC;
 
-        // Create a new Date object representing the next indexing time
-        const nextIndexing = new Date(now.getTime()); // Start with current time
-
-        // Add the calculated minutes, letting the Date object handle rollovers (hours, days)
-        nextIndexing.setUTCMinutes(currentUTCMinutes + minutesToAdd);
-
-        // Reset seconds and milliseconds for a clean time display (e.g., 10:05:00)
-        nextIndexing.setUTCSeconds(0, 0);
+        if (nextHourUTC !== undefined) {
+            // If we found an hour later today (UTC)
+            nextIndexingDateUTC = new Date(Date.UTC(
+                currentUTCFullYear,
+                currentUTCMonth,
+                currentUTCDate,
+                nextHourUTC, // Use the found hour
+                0, 0, 0     // Reset minutes, seconds, milliseconds
+            ));
+        } else {
+            // If no scheduled hour is later today (e.g., it's past 20:00 UTC),
+            // the next run is the first one (00:00 UTC) on the *next* UTC day.
+            nextHourUTC = scheduledUTCHours[0]; // This will be 0
+            nextIndexingDateUTC = new Date(Date.UTC(
+                currentUTCFullYear,
+                currentUTCMonth,
+                currentUTCDate, // Start with today's date
+                nextHourUTC,    // Use 00 hour
+                0, 0, 0
+            ));
+            // Increment the date by one day (Date object handles month/year rollovers)
+            nextIndexingDateUTC.setUTCDate(nextIndexingDateUTC.getUTCDate() + 1);
+        }
 
         // --- Format and Display ---
 
-        let userTimeZone = 'UTC'; // Default timezone
-        try {
-             // Get user's time zone safely
-             userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        } catch(tzError) {
-             console.warn("Could not detect user timezone, defaulting to UTC for local display.", tzError);
-        }
+        const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-
-        // Format the next indexing time in the user's local timezone (or UTC fallback)
-        const localTime = nextIndexing.toLocaleTimeString([], { // Use default locale formatting
+        // Format the next indexing time in the user's local timezone
+        // Using toLocaleString to potentially include the date, as it might be tomorrow locally
+        const localTime = nextIndexingDateUTC.toLocaleString([], { // Use default locale
             timeZone: userTimeZone,
+            // Optional: Add date parts if needed, as the next run might be "tomorrow" locally
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
             hour: 'numeric',
-            minute: '2-digit', // Ensures 05, not 5
-            // hour12: true // Optional: uncomment for AM/PM format
+            minute: '2-digit',
+            // hour12: true // Adjust as desired
         });
 
-        // Format the next indexing time in UTC
-        const utcTime = nextIndexing.toLocaleTimeString([], { // Use default locale formatting
+        // Format the next indexing time in UTC (Time only)
+        const utcTime = nextIndexingDateUTC.toLocaleTimeString([], { // Use default locale
             timeZone: 'UTC',
-            hour: '2-digit',   // Ensures 08, not 8
-            minute: '2-digit', // Ensures 05, not 5
-            hour12: false      // Standard 24-hour format for UTC
+            hour: '2-digit',   // Use '2-digit' for consistency (e.g., 00, 05)
+            minute: '2-digit', // Use '2-digit' to ensure :00
+            hour12: false      // UTC is typically 24-hour
         });
+        // Format the next indexing Date in UTC
+         const utcDate = nextIndexingDateUTC.toLocaleDateString([], {
+             timeZone: 'UTC',
+             year: 'numeric',
+             month: 'short',
+             day: 'numeric'
+         });
 
-        localTimeEl.textContent = `Next indexing at ${localTime} (local time)`;
-        utcTimeEl.textContent = `(${utcTime} UTC)`; // Display UTC time clearly
+
+        localTimeEl.textContent = `Next indexing: ${localTime} (local time)`;
+        utcTimeEl.textContent = `(${utcDate}, ${utcTime} UTC)`; // Show UTC Date and Time
 
     } catch (error) {
         console.error("Error calculating or formatting next indexing time:", error);
-        // Provide a fallback message if time zone detection or formatting fails
-        localTimeEl.textContent = `Next indexing runs every 5 minutes (UTC).`;
+        // Update fallback message
+        localTimeEl.textContent = `Next indexing runs at 00, 05, 10, 15, 20 UTC.`;
         utcTimeEl.textContent = `Could not display specific time.`;
     }
 }
@@ -321,27 +346,24 @@ function displayIndexingTime() {
 // Initial call to display the time immediately on load
 displayIndexingTime();
 
-// Update the displayed time every minute (60000 milliseconds)
-// This ensures the "next" time stays reasonably current
-setInterval(displayIndexingTime, 60000);
+// Update the displayed time periodically (e.g., every minute or every 5 mins)
+// Updating every minute is still fine here.
+setInterval(displayIndexingTime, 60000); // 60000ms = 1 minute
 
+// ... (Keep your existing Fork Now & Explore Store Button Functionality below this) ...
 
-// ===== Fork Now & Explore Store Button Functionality =====
+// Fork Now & Explore Store Button Functionality
 const forkButton = document.getElementById('fork-button');
 const exploreButton = document.getElementById('explore-button');
 
 if (forkButton) {
     forkButton.addEventListener('click', () => {
-        // Redirects the user to the fork page of the specified repository
         window.location.href = 'https://github.com/ONE-APP-STORE/config-repo/fork';
     });
 }
 
 if (exploreButton) {
     exploreButton.addEventListener('click', () => {
-        // Redirects the user to the main website
         window.location.href = 'https://one-app-store.com';
     });
 }
-
-// ===== END OF SCRIPT =====
