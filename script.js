@@ -1,9 +1,12 @@
-// Theme Toggling
+// ===== Theme Toggling =====
 const htmlElement = document.documentElement;
 const themeToggle = document.getElementById('theme-toggle');
 const themeIcon = document.getElementById('theme-icon');
 
 function updateThemeIcon() {
+    // Check if elements exist before manipulating them
+    if (!htmlElement || !themeIcon) return;
+
     if (htmlElement.classList.contains('dark-theme')) {
         themeIcon.classList.remove('bi-moon-fill');
         themeIcon.classList.add('bi-sun-fill');
@@ -13,21 +16,36 @@ function updateThemeIcon() {
     }
 }
 
-themeToggle.addEventListener('click', () => {
-    htmlElement.classList.toggle('dark-theme');
-    localStorage.setItem('theme', htmlElement.classList.contains('dark-theme') ? 'dark' : 'light');
-    updateThemeIcon();
-});
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        if (!htmlElement) return;
+        htmlElement.classList.toggle('dark-theme');
+        // Save theme preference to localStorage
+        try {
+             localStorage.setItem('theme', htmlElement.classList.contains('dark-theme') ? 'dark' : 'light');
+        } catch (e) {
+            console.error("LocalStorage is not available:", e);
+        }
+        updateThemeIcon();
+    });
+}
 
-// Initialize theme icon on load (initial theme set inline in HTML head)
+// Initialize theme icon on load
+// Note: Initial theme (light/dark) should ideally be set based on localStorage
+// or system preference *before* this script runs (e.g., inline script in <head>)
+// This call ensures the icon matches the initially loaded theme class.
 updateThemeIcon();
 
-// Config Generator
+
+// ===== Config Generator =====
 const form = document.getElementById('config-form');
 const yamlPreview = document.getElementById('yaml-preview');
 const copyButton = document.getElementById('copy-yaml');
 
 function generateYAML() {
+    // Check if essential elements exist
+    if (!form || !yamlPreview) return;
+
     const fields = {
         name: document.getElementById('name')?.value,
         author: document.getElementById('author')?.value,
@@ -44,137 +62,154 @@ function generateYAML() {
     // Validate required fields
     const requiredFields = ['name', 'author', 'version', 'description', 'logo_url', 'download_url'];
     const missingFields = requiredFields.filter(field => !fields[field]);
-    
+
     if (missingFields.length > 0) {
         const message = `Missing required fields: ${missingFields.join(', ')}`;
-        if (yamlPreview) {
-            yamlPreview.textContent = message;
-            yamlPreview.style.color = 'var(--secondary-color)';
-        }
+        yamlPreview.textContent = message;
+        yamlPreview.style.color = 'var(--secondary-color)'; // Use CSS variable for color
         return;
     }
 
-    // Validate version format
+    // Validate version format (simple X.Y.Z)
     if (!/^\d+\.\d+\.\d+$/.test(fields.version)) {
-        if (yamlPreview) {
-            yamlPreview.textContent = 'Invalid version format. Use X.Y.Z format (e.g., 1.0.0)';
-            yamlPreview.style.color = 'var(--secondary-color)';
-        }
+        yamlPreview.textContent = 'Invalid version format. Use X.Y.Z format (e.g., 1.0.0)';
+        yamlPreview.style.color = 'var(--secondary-color)';
         return;
     }
 
     // Validate URLs
     const urlFields = ['logo_url', 'download_url', 'homepage'];
     for (const field of urlFields) {
+        // Only validate if the field has a value and doesn't look like a basic URL
         if (fields[field] && !/^https?:\/\/.+/.test(fields[field])) {
-            if (yamlPreview) {
-                yamlPreview.textContent = `Invalid ${field} URL format. Must start with http:// or https://`;
-                yamlPreview.style.color = 'var(--secondary-color)';
-            }
+            yamlPreview.textContent = `Invalid ${field.replace('_', ' ')} URL format. Must start with http:// or https://`;
+            yamlPreview.style.color = 'var(--secondary-color)';
             return;
         }
     }
 
+    // Generate YAML string
     let yaml = '';
     for (const [key, value] of Object.entries(fields)) {
-        if (value && key !== 'tags') {
-            yaml += `${key}: "${value}"\n`;
-        }
-    }
-    if (fields.tags) {
-        const tagsArray = fields.tags.split(',').map(t => t.trim()).filter(t => t);
-        if (tagsArray.length > 0) {
-            yaml += `tags: [${tagsArray.map(t => `"${t}"`).join(', ')}]\n`;
+        // Only include fields that have a value
+        if (value) {
+            if (key === 'tags') {
+                // Handle tags separately: split, trim, filter empty, format as array
+                const tagsArray = value.split(',')
+                                     .map(t => t.trim())
+                                     .filter(t => t); // Remove empty strings
+                if (tagsArray.length > 0) {
+                    yaml += `tags: [${tagsArray.map(t => `"${t}"`).join(', ')}]\n`;
+                }
+            } else {
+                // Enclose string values in quotes
+                yaml += `${key}: "${value}"\n`;
+            }
         }
     }
 
-    if (yamlPreview) {
-        yamlPreview.textContent = yaml || 'Fill in the form to see your config';
-        yamlPreview.style.color = ''; // Reset color
-    }
+    yamlPreview.textContent = yaml || 'Fill in the form to see your config';
+    yamlPreview.style.color = ''; // Reset color if validation passed
 }
 
+// Add event listener to the form for real-time updates
 if (form) {
     form.addEventListener('input', generateYAML);
+    // Initial call to generate YAML based on any pre-filled form values
+    generateYAML();
 }
 
-if (copyButton) {
+// Add event listener for the copy button
+if (copyButton && yamlPreview && navigator.clipboard) {
     copyButton.addEventListener('click', () => {
-        if (yamlPreview?.textContent && navigator.clipboard) {
-            navigator.clipboard.writeText(yamlPreview.textContent)
+        const textToCopy = yamlPreview.textContent;
+        // Only copy if there's valid text (not placeholder/error) and clipboard API is available
+        if (textToCopy && textToCopy !== 'Fill in the form to see your config' && !textToCopy.startsWith('Missing required fields') && !textToCopy.startsWith('Invalid')) {
+            navigator.clipboard.writeText(textToCopy)
                 .then(() => {
                     copyButton.textContent = 'Copied!';
-                    setTimeout(() => copyButton.textContent = 'Copy Config', 2000);
+                    // Revert button text after 2 seconds
+                    setTimeout(() => { copyButton.textContent = 'Copy Config'; }, 2000);
                 })
-                .catch(err => console.error('Failed to copy: ', err));
+                .catch(err => {
+                    console.error('Failed to copy YAML to clipboard: ', err);
+                    copyButton.textContent = 'Copy Failed';
+                     setTimeout(() => { copyButton.textContent = 'Copy Config'; }, 2000);
+                });
+        } else {
+             copyButton.textContent = 'Nothing to Copy';
+             setTimeout(() => { copyButton.textContent = 'Copy Config'; }, 2000);
         }
     });
 }
 
-// Back to Top Button
+
+// ===== Back to Top Button =====
 const backToTop = document.getElementById('back-to-top');
 if (backToTop) {
     window.addEventListener('scroll', () => {
+        // Show button if scrolled down more than 300px, hide otherwise
         backToTop.classList.toggle('d-none', window.scrollY <= 300);
     });
-    backToTop.addEventListener('click', () => {
+    backToTop.addEventListener('click', (e) => {
+        e.preventDefault(); // Prevent default anchor behavior
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 }
 
-// Smooth Scrolling for Anchors
+
+// ===== Smooth Scrolling for Anchors =====
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', (e) => {
-        e.preventDefault();
-        const targetId = anchor.getAttribute('href');
-        const targetElement = document.querySelector(targetId);
-        if (targetElement) {
-            targetElement.scrollIntoView({ behavior: 'smooth' });
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault(); // Prevent default anchor jump
+        const targetId = this.getAttribute('href');
+        try {
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+                targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        } catch (error) {
+             console.error(`Error finding or scrolling to element with ID: ${targetId}`, error);
         }
     });
 });
 
-// ... (Keep your existing Theme Toggling, Config Generator, Back to Top, Smooth Scrolling code above this) ...
 
-// Fetch GitHub Stats and App Count from another repo
+// ===== Fetch GitHub Stats and App Count =====
 async function fetchStatsAndAppCount() {
-    // This element will now show the line count from your config file
+    // Element to show app count (lines from config file in the *new* repo)
     const statsAppsEl = document.getElementById('stats-apps');
-    // This element will show the stargazers count from the original repo
-    const statsContributorsEl = document.getElementById('stats-contributors');
+    // Element to show stargazers (from the *original* repo)
+    const statsContributorsEl = document.getElementById('stats-contributors'); // Renamed element ID makes more sense now
 
-    // Set loading states
+    // Set initial loading states
     if (statsAppsEl) statsAppsEl.textContent = 'Loading...';
     if (statsContributorsEl) statsContributorsEl.textContent = 'Loading...';
 
-    // --- Fetch stats for your original repo (skyious/config-repo-oneappstore) ---
-    // We'll use this to get the stargazers count
+    // --- Fetch stats for your original repo (for stargazers) ---
+    const ORIGINAL_REPO_OWNER = 'skyious';
+    const ORIGINAL_REPO_NAME = 'config-repo-oneappstore';
     try {
-        const originalRepoResponse = await fetch('https://api.github.com/repos/skyious/config-repo-oneappstore');
+        const originalRepoResponse = await fetch(`https://api.github.com/repos/${ORIGINAL_REPO_OWNER}/${ORIGINAL_REPO_NAME}`);
         if (!originalRepoResponse.ok) {
-             console.error(`HTTP error! status: ${originalRepoResponse.status} for original repo`);
-             // Optionally update the element to show error or default
-             if (statsContributorsEl) statsContributorsEl.textContent = 'Failed to load stats';
-        } else {
-            const originalRepoData = await originalRepoResponse.json();
-            // Display stargazers count (often more relevant than watchers)
-            if (statsContributorsEl) statsContributorsEl.textContent = originalRepoData.stargazers_count ?? 'numerous'; // Changed from watchers_count
+            throw new Error(`HTTP error! status: ${originalRepoResponse.status} for original repo`);
         }
-
+        const originalRepoData = await originalRepoResponse.json();
+        if (statsContributorsEl) {
+            // Display stargazers count, fall back to 'N/A' if undefined/null
+            statsContributorsEl.textContent = originalRepoData.stargazers_count ?? 'N/A';
+        }
     } catch (error) {
         console.error("Failed to fetch original repo stats:", error);
-        if (statsContributorsEl) statsContributorsEl.textContent = 'Failed to load stats';
+        if (statsContributorsEl) statsContributorsEl.textContent = 'Error'; // Indicate failure
     }
 
     // --- Fetch file content from the NEW repo and count lines for app count ---
-
-    // !!! IMPORTANT: Replace these with the details of your NEW repository !!!
-    const NEW_REPO_OWNER = 'skyious'; // e.g., 'ONE-APP-STORE'
-    const NEW_REPO_NAME = 'index-repo-oneappstore';   // e.g., 'configs'
-    const CONFIG_FILE_PATH = 'apps.one';              // e.g., 'configs/my-app-list/config.one' (if in a subdir)
-
+    const NEW_REPO_OWNER = 'skyious';
+    const NEW_REPO_NAME = 'index-repo-oneappstore';
+    const CONFIG_FILE_PATH = 'apps.one'; // Path to the file within the new repo
     try {
-        // Use the GitHub Content API to get the file
+        // Use the GitHub Content API
         const fileContentResponse = await fetch(`https://api.github.com/repos/${NEW_REPO_OWNER}/${NEW_REPO_NAME}/contents/${CONFIG_FILE_PATH}`);
 
         if (!fileContentResponse.ok) {
@@ -182,97 +217,131 @@ async function fetchStatsAndAppCount() {
              if (fileContentResponse.status === 404) {
                  errorMessage = `Config file not found: ${CONFIG_FILE_PATH} in ${NEW_REPO_OWNER}/${NEW_REPO_NAME}`;
              }
-             console.error(errorMessage);
-             if (statsAppsEl) statsAppsEl.textContent = 'Failed to load count'; // Show error
-             return; // Stop here if file fetching failed
+             // Handle rate limiting specifically if possible (status 403 often indicates this)
+             if (fileContentResponse.status === 403) {
+                errorMessage += ' (Possibly due to GitHub API rate limiting)';
+             }
+             throw new Error(errorMessage);
         }
 
         const fileData = await fileContentResponse.json();
 
-        // The file content is base64 encoded in the 'content' field of the response
-        if (fileData && fileData.content) {
+        // Check if content exists and decode it
+        if (fileData?.content) {
             const base64Content = fileData.content;
-            const decodedContent = atob(base64Content); // Decode the base64 string
+            const decodedContent = atob(base64Content); // Decode Base64
 
-            // Count lines: split the content by newline characters.
-            // Filter out any empty lines that might result from trailing newlines or blank lines.
+            // Count non-empty lines
             const lines = decodedContent.split('\n').filter(line => line.trim() !== '');
 
-            // Update the statsAppsEl with the number of non-empty lines
             if (statsAppsEl) {
-                statsAppsEl.textContent = lines.length;
+                statsAppsEl.textContent = lines.length; // Display the count
             }
-
         } else {
-             console.error("Could not retrieve valid file content from API response.");
-             if (statsAppsEl) statsAppsEl.textContent = 'Failed to load count'; // Show error
+            throw new Error("Could not retrieve valid file content from API response.");
         }
 
     } catch (error) {
         console.error("Failed to fetch or process config file:", error);
-        if (statsAppsEl) statsAppsEl.textContent = 'Failed to load count'; // Show error
+        if (statsAppsEl) statsAppsEl.textContent = 'Error'; // Indicate failure
     }
 }
 
-// Call the new function on load to fetch and display stats and app count
+// Call the function on page load to fetch and display stats
 fetchStatsAndAppCount();
 
-// ... (Keep your existing Fork Now & Explore Store Button Functionality below this) ...
 
-// Calculate and Display Next Indexing Time
+// ===== Calculate and Display Next Indexing Time (Runs every 5 mins UTC) =====
 function displayIndexingTime() {
     const localTimeEl = document.getElementById('local-time');
     const utcTimeEl = document.getElementById('utc-time');
-    if (!localTimeEl || !utcTimeEl) return;
-
-    localTimeEl.textContent = 'Calculating next indexing time...';
-    utcTimeEl.textContent = '';
-
-    const now = new Date();
-    // Set target time to 8 PM IST which is 14:30 UTC
-    let nextIndexing = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 14, 30, 0));
-
-    // If current time is past today's 14:30 UTC, set target to tomorrow's 14:30 UTC
-    if (now.getTime() > nextIndexing.getTime()) {
-        nextIndexing.setUTCDate(nextIndexing.getUTCDate() + 1);
+    if (!localTimeEl || !utcTimeEl) {
+        console.error("Time display elements not found.");
+        return; // Exit if elements aren't found
     }
 
     try {
-        const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const localTime = nextIndexing.toLocaleTimeString('en-US', {
+        const now = new Date();
+        const currentUTCMinutes = now.getUTCMinutes();
+
+        // Calculate how many minutes past the last 5-minute mark we are
+        const remainderMinutes = currentUTCMinutes % 5;
+
+        // Calculate minutes to add to reach the *next* 5-minute mark
+        // If we are exactly on a 5-min mark (remainder is 0), the next is 5 mins away.
+        const minutesToAdd = (remainderMinutes === 0) ? 5 : (5 - remainderMinutes);
+
+        // Create a new Date object representing the next indexing time
+        const nextIndexing = new Date(now.getTime()); // Start with current time
+
+        // Add the calculated minutes, letting the Date object handle rollovers (hours, days)
+        nextIndexing.setUTCMinutes(currentUTCMinutes + minutesToAdd);
+
+        // Reset seconds and milliseconds for a clean time display (e.g., 10:05:00)
+        nextIndexing.setUTCSeconds(0, 0);
+
+        // --- Format and Display ---
+
+        let userTimeZone = 'UTC'; // Default timezone
+        try {
+             // Get user's time zone safely
+             userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        } catch(tzError) {
+             console.warn("Could not detect user timezone, defaulting to UTC for local display.", tzError);
+        }
+
+
+        // Format the next indexing time in the user's local timezone (or UTC fallback)
+        const localTime = nextIndexing.toLocaleTimeString([], { // Use default locale formatting
             timeZone: userTimeZone,
             hour: 'numeric',
-            minute: 'numeric',
-            hour12: true
+            minute: '2-digit', // Ensures 05, not 5
+            // hour12: true // Optional: uncomment for AM/PM format
         });
-        const utcTime = nextIndexing.toLocaleTimeString('en-US', {
+
+        // Format the next indexing time in UTC
+        const utcTime = nextIndexing.toLocaleTimeString([], { // Use default locale formatting
             timeZone: 'UTC',
-            hour: 'numeric',
-            minute: 'numeric',
-            hour12: false // UTC often shown in 24hr format
+            hour: '2-digit',   // Ensures 08, not 8
+            minute: '2-digit', // Ensures 05, not 5
+            hour12: false      // Standard 24-hour format for UTC
         });
+
         localTimeEl.textContent = `Next indexing at ${localTime} (local time)`;
-        utcTimeEl.textContent = `and ${utcTime} UTC`;
+        utcTimeEl.textContent = `(${utcTime} UTC)`; // Display UTC time clearly
+
     } catch (error) {
-        console.error("Error formatting date/time:", error);
-        localTimeEl.textContent = `Next indexing at 14:30 UTC`;
-        utcTimeEl.textContent = ``; // Hide the second line on error
+        console.error("Error calculating or formatting next indexing time:", error);
+        // Provide a fallback message if time zone detection or formatting fails
+        localTimeEl.textContent = `Next indexing runs every 5 minutes (UTC).`;
+        utcTimeEl.textContent = `Could not display specific time.`;
     }
 }
+
+// Initial call to display the time immediately on load
 displayIndexingTime();
 
-// Fork Now & Explore Store Button Functionality
+// Update the displayed time every minute (60000 milliseconds)
+// This ensures the "next" time stays reasonably current
+setInterval(displayIndexingTime, 60000);
+
+
+// ===== Fork Now & Explore Store Button Functionality =====
 const forkButton = document.getElementById('fork-button');
 const exploreButton = document.getElementById('explore-button');
 
 if (forkButton) {
     forkButton.addEventListener('click', () => {
+        // Redirects the user to the fork page of the specified repository
         window.location.href = 'https://github.com/ONE-APP-STORE/config-repo/fork';
     });
 }
 
 if (exploreButton) {
     exploreButton.addEventListener('click', () => {
+        // Redirects the user to the main website
         window.location.href = 'https://one-app-store.com';
     });
-} 
+}
+
+// ===== END OF SCRIPT =====
