@@ -355,6 +355,7 @@ setInterval(displayIndexingTime, 60000); // 60000ms = 1 minute
 // Fork Now & Explore Store Button Functionality
 const forkButton = document.getElementById('fork-button');
 const exploreButton = document.getElementById('explore-button');
+console.log(exploreButton);
 
 if (forkButton) {
     forkButton.addEventListener('click', () => {
