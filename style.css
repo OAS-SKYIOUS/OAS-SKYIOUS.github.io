@@ -305,3 +305,7 @@ html.dark-theme .accordion-item {
 .dark-theme-bg-light {
     background-color: var(--card-bg);
 } 
+
+.lead{
+    display: none;
+}
