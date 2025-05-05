@@ -175,7 +175,7 @@ async function fetchStatsAndAppCount() {
 
     try {
         // Use the GitHub Content API to get the file
-        const fileContentResponse = await fetch(`https://api.github.com/repos/${NEW_REPO_OWNER}/${NEW_REPO_NAME}/blob/main/${CONFIG_FILE_PATH}`);
+        const fileContentResponse = await fetch(`https://api.github.com/repos/${NEW_REPO_OWNER}/${NEW_REPO_NAME}/${CONFIG_FILE_PATH}`);
 
         if (!fileContentResponse.ok) {
              let errorMessage = `HTTP error! status: ${fileContentResponse.status} for config file`;
