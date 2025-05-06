@@ -359,7 +359,7 @@ console.log(exploreButton);
 
 if (forkButton) {
     forkButton.addEventListener('click', () => {
-        window.location.href = 'https://github.com/ONE-APP-STORE/config-repo/fork';
+        window.location.href = 'https://github.com/SKYIOUS/config-repo-oneappstore/fork';
     });
 }
 
